@@ -1,0 +1,58 @@
+
+<html>
+<head>
+  <style>
+  #calc {
+    display: grid;
+    grid-template-columns: repeat(5, 30px);
+    grid-gap: 10px;
+  }
+  #display     { grid-row: 1; grid-column: 1 / 6; }
+  #num0        { grid-row: 5; grid-column: 1 / 3; }
+  #num1        { grid-row: 4; grid-column: 1; }
+  #num2        { grid-row: 4; grid-column: 2; }
+  #num3        { grid-row: 4; grid-column: 3; }
+  #num4        { grid-row: 3; grid-column: 1; }
+  #num5        { grid-row: 3; grid-column: 2; }
+  #num6        { grid-row: 3; grid-column: 3; }
+  #decimal     { grid-row: 5; grid-column: 3; }
+  #equal       { grid-row: 5; grid-column: 4; }
+  #percent     { grid-row: 5; grid-column: 5; }
+  #clear       { grid-row: 2; grid-column: 4; }
+  #clear-entry { grid-row: 2; grid-column: 5; }
+  #add         { grid-row: 3; grid-column: 4; }
+  #subtract    { grid-row: 3; grid-column: 5; }
+  #multiply    { grid-row: 4; grid-column: 4; }
+  #divide      { grid-row: 4; grid-column: 5; }
+
+  #display {
+    text-align: right;
+  }
+  </style>
+</head>
+<body>
+  <div id="calc">
+    <div id="display"></div>
+    <button id="num0">0</button>
+    <button id="num1">1</button>
+    <button id="num2">2</button>
+    <button id="num3">3</button>
+    <button id="num4">4</button>
+    <button id="num5">5</button>
+    <button id="num6">6</button>
+    <button id="num7">7</button>
+    <button id="num8">8</button>
+    <button id="num9">9</button>
+    <button id="decimal">.</button>
+    <button id="add">+</button>
+    <button id="subtract">-</button>
+    <button id="multiply">*</button>
+    <button id="divide">/</button>
+    <button id="percent">%</button>
+    <button id="equal">=</button>
+    <button id="clear">C</button>
+    <button id="clear-entry">CE</button>
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>
