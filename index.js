@@ -1,5 +1,3 @@
-var display;
-
 var state = {
   // Pressing a number or decimal will append the entry
   entry: '',
@@ -17,6 +15,10 @@ var state = {
   lastArg: null,
   lastOp: null,
 };
+
+//----------------------------------------------------------------------
+// Display
+//----------------------------------------------------------------------
 
 // Entry has no display string until it is explicitly shown.
 function getEntryDisplay() {
@@ -37,16 +39,108 @@ function getDisplay() {
   return getEntryDisplay() || peekValue(0);
 }
 
+// Render the full display of the current expression
 function getFullDisplay() {
-  // TODO: display the full current expression string
-  // (with state.values and state.ops)
+  var vals = state.values.slice();
+  var ops = state.ops.slice();
+  var result = '';
+  var i,v,o;
+  for (i=0; i<Math.max(vals.length, ops.length); i++) {
+    if (i < vals.length) { result += vals[i]; }
+    if (i < ops.length) { result += ops[i]; }
+  }
+  v = getEntryDisplay();
+  if (v !== null) {
+    result += v;
+  }
+  return result;
 }
 
+// Render the last op (e.g. "+3") if it can be repeated by pressing "=".
+function getRepeatDisplay() {
+  if (state.values.length <= 1 && state.ops.length === 0 &&
+      state.lastOp !== null && state.lastArg !== null) {
+    return state.lastOp + state.lastArg;
+  }
+  return '';
+}
+
+function refreshDisplays() {
+  document.getElementById('display').innerHTML = getDisplay();
+  document.getElementById('full-display').innerHTML = getFullDisplay();
+  document.getElementById('repeat-display').innerHTML = getRepeatDisplay();
+}
+
+//----------------------------------------------------------------------
+// Helpers
+//----------------------------------------------------------------------
+
+// Operator precedence
+var opPrecedence = {
+  '+': 0,
+  '-': 0,
+  '*': 1,
+  '/': 1,
+};
+
+// Operator functions
+var opFuncs = {
+  '+': (x,y) => x+y,
+  '-': (x,y) => x-y,
+  '*': (x,y) => x*y,
+  '/': (x,y) => x/y,
+};
+
+
+function pushArg(value) {
+  state.values.push(value);
+  state.lastArg = value;
+  state.displayEntry = false;
+  state.entry = '';
+}
+
+function peekValue(i) {
+  return state.values[state.values.length-1-i];
+}
+
+function peekOp(i) {
+  return state.ops[state.ops.length-1-i];
+}
+
+// Evaluate as much of the expression as allowed by the given precedence value.
+// '0' = all
+// '1' = multiply or divide only
+function compute(precedence) {
+  var i = 0;
+  while (state.ops.length > 0) {
+    var op = peekOp(0);
+    if (opPrecedence[op] < precedence) {
+      break;
+    }
+    state.ops.pop();
+    var b = state.values.pop();
+    var a = state.values.pop();
+    var result = opFuncs[op](a,b);
+    state.values.push(result);
+    if (i === 0) {
+      state.lastArg = b;
+      state.lastOp = op;
+    }
+    i++;
+  }
+}
+
+//----------------------------------------------------------------------
+// Button functions
+//----------------------------------------------------------------------
+
+// CE was pressed
 function clearEntry() {
   state.entry = '';
   state.displayEntry = true;
 }
 
+// C was pressed
 function clear() {
   clearEntry();
   state.values = [];
@@ -75,37 +169,7 @@ function onDecimal() {
   }
 }
 
-// Operator precedence
-var opPrecedence = {
-  '+': 0,
-  '-': 0,
-  '*': 1,
-  '/': 1,
-};
-
-// Operator functions
-var opFuncs = {
-  '+': (x,y) => x+y,
-  '-': (x,y) => x-y,
-  '*': (x,y) => x*y,
-  '/': (x,y) => x/y,
-};
-
-function pushArg(value) {
-  state.values.push(value);
-  state.lastArg = value;
-  state.displayEntry = false;
-  state.entry = '';
-}
-
-function peekValue(i) {
-  return state.values[state.values.length-1-i];
-}
-
-function peekOp(i) {
-  return state.ops[state.ops.length-1-i];
-}
-
+// '%' was pressed
 function onPercent() {
   var value = getEntryValue();
   if (value === null) {
@@ -125,18 +189,20 @@ function onPercent() {
   }
 }
 
+// Either of '+', '-', '*', or '/' were pressed
 function onOperation(op) {
   var value = getEntryValue();
   if (value === null) {
-    // Do nothing if there is no entry
-    return;
+    // Replace current op
+    state.ops.pop();
+  } else {
+    pushArg(value);
   }
-  pushArg(value);
   compute(opPrecedence[op]);
   state.ops.push(op);
-  state.lastOp = op;
 }
 
+// '=' was pressed
 function onEqual() {
   // Ensure one op is available.
   if (state.ops.length === 0 && state.lastOp) {
@@ -168,21 +234,8 @@ function onEqual() {
   compute(0);
 }
 
-function compute(precedence) {
-  while (state.ops.length > 0) {
-    var op = peekOp(0);
-    if (opPrecedence[op] < precedence) {
-      break;
-    }
-    state.ops.pop();
-    var b = state.values.pop();
-    var a = state.values.pop();
-    var result = opFuncs[op](a,b);
-    state.values.push(result);
-  }
-}
-
-var keys = {
+// Functions for each button id
+var buttonFunctions = {
   num0: () => onNumber(0),
   num1: () => onNumber(1),
   num2: () => onNumber(2),
@@ -204,24 +257,23 @@ var keys = {
   'clear-entry': () => clearEntry(),
 };
 
-function refreshDisplay() {
-  display.innerHTML = getDisplay();
-}
-
 function onClick() {
-  keys[this.id]();
-  refreshDisplay();
+  buttonFunctions[this.id]();
+  refreshDisplays();
   console.log(JSON.stringify(state, null, 2));
 }
 
+//----------------------------------------------------------------------
+// Main
+//----------------------------------------------------------------------
+
 function init() {
-  display = document.getElementById('display');
   var buttons = document.querySelectorAll("#calc button");
   var i, name;
   for (i=0; i<buttons.length; i++) {
     buttons[i].addEventListener('click', onClick);
   }
-  refreshDisplay();
+  refreshDisplays();
 }
 
 window.addEventListener('load', function() {
